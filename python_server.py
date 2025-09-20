@@ -8,7 +8,7 @@ import urllib.parse
 import mimetypes
 
 # 定义端口
-PORT = 8000
+PORT = 8001
 
 # 定义MIME类型
 MIME_TYPES = {
@@ -53,15 +53,34 @@ class MyHttpRequestHandler(http.server.SimpleHTTPRequestHandler):
         if self.path == '/':
             self.path = '/index.html'
         
+        # 处理带查询参数的路径（如 styles.css?v=1.0.1）
+        clean_path = self.path.split('?')[0]
+        
         # 获取文件扩展名
-        _, ext = os.path.splitext(self.path)
+        _, ext = os.path.splitext(clean_path)
         
         # 尝试提供文件
         try:
-            # 检查文件是否存在
-            if os.path.exists('.' + self.path):
-                # 调用父类方法处理文件
-                return http.server.SimpleHTTPRequestHandler.do_GET(self)
+            # 检查文件是否存在（使用清理后的路径）
+            file_path = '.' + clean_path
+            if os.path.exists(file_path):
+                # 如果原始路径和清理后的路径不同，需要手动处理文件提供
+                if self.path != clean_path:
+                    # 读取文件内容并发送
+                    with open(file_path, 'rb') as f:
+                        content = f.read()
+                    # 获取MIME类型
+                    mime_type = self.guess_type(file_path)
+                    # 发送响应
+                    self.send_response(200)
+                    self.send_header('Content-type', mime_type)
+                    self.send_header('Content-Length', str(len(content)))
+                    self.send_header('Cache-Control', 'no-cache')
+                    self.end_headers()
+                    self.wfile.write(content)
+                else:
+                    # 调用父类方法处理文件
+                    return http.server.SimpleHTTPRequestHandler.do_GET(self)
             else:
                 # 文件未找到，尝试返回404页面
                 if os.path.exists('./404.html'):

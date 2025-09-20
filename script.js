@@ -54,7 +54,7 @@ const grade2StampsData = [
 ];
 
 // 学生数据
-const studentsData = {
+let studentsData = {
     student1: { name: "张小明", grade: "grade1", class: "class1", earnedStamps: [1, 4, 7], stampDates: {}, monthlyHistory: {} },
     student2: { name: "李小红", grade: "grade1", class: "class1", earnedStamps: [2, 5, 8, 11], stampDates: {}, monthlyHistory: {} },
     student3: { name: "王小华", grade: "grade2", class: "class2", earnedStamps: [3, 6, 9, 10, 12], stampDates: {}, monthlyHistory: {} },
@@ -63,6 +63,44 @@ const studentsData = {
     student6: { name: "陈小美", grade: "grade3", class: "class1", earnedStamps: [1, 5, 9, 13], stampDates: {}, monthlyHistory: {} },
     student7: { name: "孙小勇", grade: "grade3", class: "class2", earnedStamps: [2, 6, 10], stampDates: {}, monthlyHistory: {} }
 };
+
+// 数据持久化相关函数
+const STORAGE_KEY = 'xiaobangyang_students_data';
+
+// 保存数据到localStorage
+function saveStudentsData() {
+    try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(studentsData));
+        console.log('学生数据已保存到localStorage');
+    } catch (error) {
+        console.error('保存学生数据失败:', error);
+    }
+}
+
+// 从localStorage加载数据
+function loadStudentsData() {
+    try {
+        const savedData = localStorage.getItem(STORAGE_KEY);
+        if (savedData) {
+            studentsData = JSON.parse(savedData);
+            console.log('学生数据已从localStorage加载');
+            return true;
+        }
+    } catch (error) {
+        console.error('加载学生数据失败:', error);
+    }
+    return false;
+}
+
+// 清除保存的数据
+function clearSavedData() {
+    try {
+        localStorage.removeItem(STORAGE_KEY);
+        console.log('已清除保存的学生数据');
+    } catch (error) {
+        console.error('清除学生数据失败:', error);
+    }
+}
 
 // 登录状态管理
 let isTeacherLoggedIn = false; // 教师登录状态
@@ -96,6 +134,10 @@ const batchOperations = document.getElementById('batchOperations');
 const batchStampName = document.getElementById('batchStampName');
 const batchAwardBtn = document.getElementById('batchAwardBtn');
 const cancelBatchBtn = document.getElementById('cancelBatchBtn');
+// 添加数据管理按钮的引用
+const saveDataBtn = document.getElementById('saveDataBtn');
+const loadDataBtn = document.getElementById('loadDataBtn');
+const clearDataBtn = document.getElementById('clearDataBtn');
 const stampGrid = document.getElementById('stampGrid');
 const progressFill = document.getElementById('progressFill');
 const currentStampsEl = document.getElementById('currentStamps');
@@ -192,6 +234,38 @@ document.addEventListener('DOMContentLoaded', () => {
     confirmBatchAwardBtn.addEventListener('click', confirmBatchAward);
     cancelBatchAwardBtn.addEventListener('click', closeBatchAwardModal);
     closeBatchAward.addEventListener('click', closeBatchAwardModal);
+    
+    // 添加数据管理按钮事件监听器
+    if (saveDataBtn) {
+        saveDataBtn.addEventListener('click', function() {
+            saveStudentsData();
+            showNotification('数据已手动保存到本地存储！');
+        });
+    }
+    
+    if (loadDataBtn) {
+        loadDataBtn.addEventListener('click', function() {
+            if (loadStudentsData()) {
+                // 重新初始化界面
+                updateStudentList();
+                renderStamps();
+                updateProgress();
+                showNotification('数据已从本地存储加载！');
+            } else {
+                showNotification('没有找到已保存的数据！', 'error');
+            }
+        });
+    }
+    
+    if (clearDataBtn) {
+        clearDataBtn.addEventListener('click', function() {
+            if (confirm('确定要清除本地保存的所有数据吗？此操作不可撤销！')) {
+                clearSavedData();
+                showNotification('本地保存的数据已清除！');
+            }
+        });
+    }
+    
     window.addEventListener('click', (e) => {
         if (e.target === modal) closeModalHandler();
         if (e.target === historyModal) closeHistoryModal();
@@ -1023,6 +1097,9 @@ function confirmBatchAward() {
         }
     });
     
+    // 保存数据到localStorage
+    saveStudentsData();
+    
     // 保存印章名称用于显示
     const stampName = selectedStampForBatch.name;
     
@@ -1125,6 +1202,9 @@ function awardStamp() {
             }
             student.stampDates[stampId] = getCurrentDate();
             
+            // 保存数据到localStorage
+            saveStudentsData();
+            
             // 显示成功消息
             showNotification('已完成标记成功！');
         }
@@ -1150,6 +1230,9 @@ function cancelStudentStamp(studentId, stampId) {
             delete student.stampDates[stampId];
         }
         
+        // 保存数据到localStorage
+        saveStudentsData();
+        
         showNotification('取消已完成标记成功！');
     }
 }
@@ -1171,6 +1254,9 @@ function batchCancelStamp(stampId) {
             canceledCount++;
         }
     });
+    
+    // 保存数据到localStorage
+    saveStudentsData();
     
     showNotification(`批量取消已完成标记成功！为${canceledCount}名学生取消了已完成标记`);
 }
@@ -1359,6 +1445,9 @@ function resetClassStamps() {
             resetCount++;
         }
     });
+    
+    // 保存数据到localStorage
+    saveStudentsData();
     
     // 显示成功消息
     showNotification(`成功为${getGradeName(currentGrade)}${getClassName(currentClass)}的${resetCount}名学生重置了集章状态！`);
@@ -1795,6 +1884,9 @@ function updateStudentsData(newStudents) {
         newStudentCount++;
     });
     
+    // 保存数据到localStorage
+    saveStudentsData();
+    
     // 显示清空提示
     showNotification(`新学期开始！已为${gradeName}${className}清空所有历史集章记录，重新上传了${newStudentCount}名学生。`);
     
@@ -1818,6 +1910,9 @@ function clearClassStudentsData(grade, className) {
     studentsToRemove.forEach(studentId => {
         delete studentsData[studentId];
     });
+    
+    // 保存数据到localStorage
+    saveStudentsData();
     
     console.log(`已清空${getGradeName(grade)}${getClassName(className)}的${studentsToRemove.length}名学生的历史数据`);
 }
@@ -2009,6 +2104,9 @@ function switchToParent() {
 
 // 初始化主界面
 function initializeMainInterface() {
+    // 从localStorage加载学生数据
+    loadStudentsData();
+    
     // 初始化界面
     updateUIForUserType();
     

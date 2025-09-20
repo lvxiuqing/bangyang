@@ -4,8 +4,11 @@ const CACHE_NAME = 'xiaobangyang-static-' + CACHE_VERSION;
 
 // 需要缓存的核心静态资源
 // 修复GitHub Pages路径问题
-const baseUrl = self.location.hostname === 'lvxiuqing.github.io' ? '/bangyang' : '';
-const urlsToCache = [
+const isGitHubPages = self.location.hostname === 'lvxiuqing.github.io';
+const baseUrl = isGitHubPages ? '/bangyang' : '';
+
+// 在GitHub Pages上使用绝对路径，在本地使用相对路径
+const urlsToCache = isGitHubPages ? [
   baseUrl + '/',
   baseUrl + '/index.html',
   baseUrl + '/styles.css',
@@ -21,6 +24,22 @@ const urlsToCache = [
   baseUrl + '/images/180.png',
   baseUrl + '/images/192.png',
   baseUrl + '/images/512.png'
+] : [
+  '/',
+  '/index.html',
+  '/styles.css',
+  '/script.js',
+  '/manifest.json',
+  // 缓存所有PWA图标
+  '/images/android-launchericon-48-48.png',
+  '/images/android-launchericon-72-72.png',
+  '/images/android-launchericon-96-96.png',
+  '/images/android-launchericon-144-144.png',
+  '/images/android-launchericon-192-192.png',
+  '/images/android-launchericon-512-512.png',
+  '/images/180.png',
+  '/images/192.png',
+  '/images/512.png'
 ];
 
 // 安装事件 - 缓存核心资源
