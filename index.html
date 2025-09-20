@@ -8,11 +8,23 @@
     <meta name="keywords" content="教育,集章,学生成长,榜样">
     <meta name="author" content="武强县府兴小学">
     <title>榜样集章 - 学生成长记录</title>
-    <link rel="manifest" href="manifest.json">
     <link rel="stylesheet" href="/bangyang/styles.css?v=1.0.1">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <link rel="apple-touch-icon" href="images/192.png">
+    <link rel="apple-touch-icon" href="/bangyang/images/192.png">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="path_config.js"></script>
+    <script>
+        // 动态设置manifest路径
+        document.addEventListener('DOMContentLoaded', function() {
+            const manifestPath = PathConfig.isGitHubPages() ? 
+                '/bangyang/manifest_github.json' : 
+                '/manifest.json';
+            const link = document.createElement('link');
+            link.rel = 'manifest';
+            link.href = manifestPath;
+            document.head.appendChild(link);
+        });
+    </script>
 </head>
 <body>
     <div class="container">

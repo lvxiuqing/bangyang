@@ -2523,7 +2523,9 @@ function checkIfModelStar(student) {
 function registerServiceWorker() {
     if ('serviceWorker' in navigator) {
         window.addEventListener('load', function() {
-            navigator.serviceWorker.register('/sw.js')
+            // 使用路径配置检测环境并设置正确的Service Worker路径
+            const swPath = PathConfig.getServiceWorkerPath();
+            navigator.serviceWorker.register(swPath)
                 .then(function(registration) {
                     console.log('ServiceWorker registration successful with scope: ', registration.scope);
                 })
