@@ -8,7 +8,7 @@ import urllib.parse
 import mimetypes
 
 # 定义端口
-PORT = 8001
+PORT = 8002
 
 # 定义MIME类型
 MIME_TYPES = {

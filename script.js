@@ -1431,12 +1431,15 @@ function resetClassStamps() {
             // 计算当前月份获得的奖章数
             const currentAwards = calculateMonthlyAwards(student.earnedStamps, student.grade);
             
+            // 保存当前月份的完整数据到历史记录中
             student.monthlyHistory[currentMonthKey] = {
-                earnedStamps: [...student.earnedStamps],
-                stampDates: { ...student.stampDates },
+                earnedStamps: [...student.earnedStamps], // 创建副本避免引用问题
+                stampDates: { ...student.stampDates },   // 创建副本避免引用问题
                 awards: currentAwards,
                 resetDate: getCurrentDate()
             };
+            
+            console.log(`保存学生 ${student.name} 的历史记录:`, student.monthlyHistory[currentMonthKey]);
             
             // 清空当前集章状态
             student.earnedStamps = [];
@@ -2179,6 +2182,7 @@ function generateExcelReport(students) {
         console.log(`正在处理学生 ${index + 1}/${students.length}: ${student.name}`);
         const worksheetData = generateStudentData(student);
         console.log(`学生 ${student.name} 的数据行数:`, worksheetData.length);
+        console.log(`学生 ${student.name} 的完整数据:`, worksheetData);
         const worksheet = XLSX.utils.aoa_to_sheet(worksheetData);
         
         // 添加单元格合并设置
@@ -2269,8 +2273,8 @@ function generateStudentData(student) {
     // 如果学生有当前集章数据，添加到月份数据中
     if (currentEarnedStamps.length > 0 || Object.keys(currentStampDates).length > 0) {
         allMonthsData[currentMonthKey] = {
-            earnedStamps: currentEarnedStamps,
-            stampDates: currentStampDates,
+            earnedStamps: [...currentEarnedStamps], // 创建副本避免修改原数据
+            stampDates: {...currentStampDates}, // 创建副本避免修改原数据
             awards: calculateMonthlyAwards(currentEarnedStamps, student.grade)
         };
     }
@@ -2575,8 +2579,8 @@ function checkIfModelStar(student) {
     if (currentEarnedStamps.length > 0 || Object.keys(currentStampDates).length > 0) {
         const currentAwards = calculateMonthlyAwards(currentEarnedStamps, student.grade);
         allMonthsData[currentMonthKey] = {
-            earnedStamps: currentEarnedStamps,
-            stampDates: currentStampDates,
+            earnedStamps: [...currentEarnedStamps], // 创建副本避免修改原数据
+            stampDates: {...currentStampDates}, // 创建副本避免修改原数据
             awards: currentAwards
         };
         console.log(`- 当前月份 ${currentMonthKey} 奖章数: ${currentAwards}`);
