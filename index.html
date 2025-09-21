@@ -9,7 +9,7 @@
     <meta name="author" content="武强县府兴小学">
     <title>榜样集章 - 学生成长记录</title>
     <!-- 使用相对路径直接引用CSS，避免路径配置问题 -->
-    <link rel="stylesheet" href="/bangyang/styles.css?v=1.0.1">
+    <link rel="stylesheet" href="styles.css?v=1.0.1">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link rel="apple-touch-icon" href="images/192.png">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -21,7 +21,7 @@
             const isGitHubPages = window.location.hostname === 'lvxiuqing.github.io';
             const manifestPath = isGitHubPages ? 
                 '/bangyang/manifest_github.json' : 
-                'manifest.json';
+                '/manifest.json';
             const link = document.createElement('link');
             link.rel = 'manifest';
             link.href = manifestPath;

@@ -78,8 +78,15 @@ function saveStudentsData() {
             }
         });
         
+        // 打印保存前的数据状态
+        console.log('保存数据到localStorage前的学生数据:', JSON.parse(JSON.stringify(studentsData)));
+        
         localStorage.setItem(STORAGE_KEY, JSON.stringify(studentsData));
         console.log('学生数据已保存到localStorage');
+        
+        // 验证保存的数据
+        const savedData = localStorage.getItem(STORAGE_KEY);
+        console.log('从localStorage读取的数据:', savedData ? JSON.parse(savedData) : null);
     } catch (error) {
         console.error('保存学生数据失败:', error);
     }
@@ -1436,6 +1443,8 @@ function resetClassStamps() {
     const currentMonthKey = getCurrentMonthKey();
     let resetCount = 0;
     
+    console.log('开始重置集章状态，当前月份:', currentMonthKey);
+    
     // 遍历所有学生，找到当前班级的学生
     Object.keys(studentsData).forEach(studentId => {
         const student = studentsData[studentId];
@@ -1445,18 +1454,28 @@ function resetClassStamps() {
                 student.monthlyHistory = {};
             }
             
+            // 检查是否已经有当前月份的历史记录
+            // 如果有，我们需要创建一个新的唯一键来避免覆盖
+            let monthKeyToUse = currentMonthKey;
+            let counter = 1;
+            while (student.monthlyHistory[monthKeyToUse]) {
+                monthKeyToUse = `${currentMonthKey}_${counter}`;
+                counter++;
+            }
+            
             // 计算当前月份获得的奖章数
             const currentAwards = calculateMonthlyAwards(student.earnedStamps, student.grade);
             
             // 保存当前月份的完整数据到历史记录中
-            student.monthlyHistory[currentMonthKey] = {
+            student.monthlyHistory[monthKeyToUse] = {
                 earnedStamps: [...student.earnedStamps], // 创建副本避免引用问题
                 stampDates: { ...student.stampDates },   // 创建副本避免引用问题
                 awards: currentAwards,
                 resetDate: getCurrentDate()
             };
             
-            console.log(`保存学生 ${student.name} 的历史记录:`, student.monthlyHistory[currentMonthKey]);
+            console.log(`保存学生 ${student.name} 的历史记录:`, student.monthlyHistory[monthKeyToUse]);
+            console.log(`学生 ${student.name} 的完整历史记录:`, student.monthlyHistory);
             
             // 清空当前集章状态
             student.earnedStamps = [];
@@ -2276,7 +2295,7 @@ function generateStudentData(student) {
     const data = [];
     
     console.log(`生成学生 ${student.name} 的数据`);
-    console.log('学生数据:', student);
+    console.log('学生完整数据:', JSON.parse(JSON.stringify(student))); // 深拷贝以避免循环引用问题
     
     // 根据学生年级选择印章数据
     const currentStampsData = student.grade === 'grade2' ? grade2StampsData : stampsData;
@@ -2285,6 +2304,10 @@ function generateStudentData(student) {
     const monthlyHistory = student.monthlyHistory || {};
     const currentEarnedStamps = student.earnedStamps || [];
     const currentStampDates = student.stampDates || {};
+    
+    console.log('月度历史记录:', monthlyHistory);
+    console.log('当前获得的印章:', currentEarnedStamps);
+    console.log('当前印章日期:', currentStampDates);
     
     // 如果有当前数据但没有历史记录，创建当前月份的记录
     const currentMonthKey = getCurrentMonthKey();
@@ -2297,12 +2320,27 @@ function generateStudentData(student) {
             stampDates: {...currentStampDates}, // 创建副本避免修改原数据
             awards: calculateMonthlyAwards(currentEarnedStamps, student.grade)
         };
+        console.log(`添加当前月份 ${currentMonthKey} 的数据到所有月份数据中`);
     }
     
-    const months = Object.keys(allMonthsData).sort();
+    // 对月份进行正确排序，处理带下划线的月份（如 2023-10_1）
+    const months = Object.keys(allMonthsData).sort((a, b) => {
+        // 提取基础月份键（去掉可能的下划线部分）
+        const baseA = a.split('_')[0];
+        const baseB = b.split('_')[0];
+        
+        // 转换为日期对象进行比较
+        const [yearA, monthA] = baseA.split('-');
+        const [yearB, monthB] = baseB.split('-');
+        
+        const dateA = new Date(parseInt(yearA), parseInt(monthA) - 1);
+        const dateB = new Date(parseInt(yearB), parseInt(monthB) - 1);
+        
+        return dateA - dateB;
+    });
     
     console.log('完整月度数据:', allMonthsData);
-    console.log('月份列表:', months);
+    console.log('所有月份列表（已排序）:', months);
     console.log('当前月份数据:', {
         currentEarnedStamps,
         currentStampDates,
@@ -2336,7 +2374,9 @@ function generateStudentData(student) {
     // 添加动态月份列和对应的奖章列
     if (months.length > 0) {
         months.forEach(monthKey => {
-            const [year, month] = monthKey.split('-');
+            // 提取基础月份键用于显示
+            const baseMonthKey = monthKey.split('_')[0];
+            const [year, month] = baseMonthKey.split('-');
             headerRow.push(`（${parseInt(month)}）月`);
             headerRow.push('是否获得奖章');
         });
@@ -2489,6 +2529,7 @@ function generateStudentData(student) {
         });
     });
     
+    console.log(`学生 ${student.name} 生成的完整数据:`, data);
     return data;
 }
 
