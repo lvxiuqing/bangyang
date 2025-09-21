@@ -70,6 +70,14 @@ const STORAGE_KEY = 'xiaobangyang_students_data';
 // 保存数据到localStorage
 function saveStudentsData() {
     try {
+        // 在保存数据前，确保所有学生的monthlyHistory数据完整
+        Object.keys(studentsData).forEach(studentId => {
+            const student = studentsData[studentId];
+            if (!student.monthlyHistory) {
+                student.monthlyHistory = {};
+            }
+        });
+        
         localStorage.setItem(STORAGE_KEY, JSON.stringify(studentsData));
         console.log('学生数据已保存到localStorage');
     } catch (error) {
@@ -83,6 +91,15 @@ function loadStudentsData() {
         const savedData = localStorage.getItem(STORAGE_KEY);
         if (savedData) {
             studentsData = JSON.parse(savedData);
+            
+            // 确保所有学生对象都有monthlyHistory属性
+            Object.keys(studentsData).forEach(studentId => {
+                const student = studentsData[studentId];
+                if (!student.monthlyHistory) {
+                    student.monthlyHistory = {};
+                }
+            });
+            
             console.log('学生数据已从localStorage加载');
             return true;
         }
@@ -897,8 +914,8 @@ function renderHistoryContent(student) {
         const categories = [
             { key: 'study', name: '学习榜样' },
             { key: 'behavior', name: '文明榜样' },
-            { key: 'teamwork', name: '协作榜样' },
-            { key: 'responsibility', name: '责任榜样' },
+            { key: 'teamwork', name: '纪律榜样' },
+            { key: 'responsibility', name: '劳动榜样' },
             { key: 'unity', name: '团结榜样' },
             { key: 'honesty', name: '诚信榜样' },
             { key: 'habit', name: '习惯榜样' }
@@ -1423,7 +1440,7 @@ function resetClassStamps() {
     Object.keys(studentsData).forEach(studentId => {
         const student = studentsData[studentId];
         if (student.grade === currentGrade && student.class === currentClass) {
-            // 保存当前月份的集章记录到历史中
+            // 确保monthlyHistory对象存在
             if (!student.monthlyHistory) {
                 student.monthlyHistory = {};
             }
@@ -2162,6 +2179,9 @@ function handleExportStats() {
             throw new Error('Excel库未正确加载，请刷新页面重试');
         }
         
+        // 在导出前确保数据已保存
+        saveStudentsData();
+        
         // 生成并下载Excel文件
         generateExcelReport(classStudents);
         showNotification(`${gradeName}${className}学期集章统计表导出成功！`);
@@ -2320,8 +2340,12 @@ function generateStudentData(student) {
             headerRow.push(`（${parseInt(month)}）月`);
             headerRow.push('是否获得奖章');
         });
+    } else {
+        // 即使没有历史记录，也要添加当前月份列
+        const now = new Date();
+        headerRow.push(`（${now.getMonth() + 1}）月`);
+        headerRow.push('是否获得奖章');
     }
-    // 如果没有历史记录，不添加月份列
     data.push(headerRow);
     
     // 按类别组织数据
@@ -2382,6 +2406,13 @@ function generateStudentData(student) {
                     hasAnyCompletion = true;
                 }
             });
+        } else {
+            // 如果没有历史记录，检查当前数据
+            const completedRulesInCategory = categoryInfo.rules.filter(rule => currentEarnedStamps.includes(rule.id));
+            categoryCompletionByMonth[currentMonthKey] = completedRulesInCategory.length === categoryInfo.rules.length;
+            if (completedRulesInCategory.length > 0) {
+                hasAnyCompletion = true;
+            }
         }
         
         categoryInfo.rules.forEach((rule, index) => {
@@ -2432,6 +2463,26 @@ function generateStudentData(student) {
                         row.push('');
                     }
                 });
+            } else {
+                // 如果没有历史记录，检查当前数据
+                const isCompleted = currentEarnedStamps.includes(rule.id);
+                
+                // 月份列：显示完成情况
+                if (isCompleted) {
+                    // 显示完成日期
+                    const completionDate = currentStampDates[rule.id] || '✓已完成';
+                    row.push(completionDate);
+                } else {
+                    // 未完成显示"×"
+                    row.push('×');
+                }
+                
+                // 奖章列：检查当前月份是否完成所有细则
+                if (index === 0 && categoryCompletionByMonth[currentMonthKey]) {
+                    row.push('已获得');
+                } else {
+                    row.push('');
+                }
             }
             
             data.push(row);
